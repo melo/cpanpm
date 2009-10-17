@@ -1924,6 +1924,49 @@ sub smoke {
     }
 }
 
+#-> sub CPAN::Shell::s ;
+sub s {
+  my $self = shift;
+  my $name = shift;
+  return unless $name;
+
+  my $url = "http://search.cpan.org";
+  my $search;
+  my $obj = $self->expandany($name);
+  $obj = $self->expand("Author", uc($name)) unless $obj;
+
+  if ($obj) {
+    ## Modules and Bundles
+    if ($obj->can('distribution')) {
+      my $dist = $obj->distribution;
+      if   ($dist) { $obj    = $dist }
+      else         { $search = 'module' }
+    }
+
+    ## Distributions
+    if ($obj->can('base_id')) {
+      $url .= '/dist/' . $obj->base_id;
+    }
+
+    ## Authors
+    if ($obj->can('email')) {
+      $url .= '/~'.lc($name).'/';
+    }
+  }
+  else {
+    $search = 'all'
+  }
+  
+  if ($search) {
+    $name =~ s/([^A-Za-z0-9\-_.!~*'()])/'%'.unpack('H*', $1)/ge;
+    $url .= "/search?mode=$search&query=$name";
+  }
+
+  $CPAN::Frontend->mywarn("URL: $url");
+
+  system('/usr/bin/open', $url);
+}
+
 {
     # set up the dispatching methods
     no strict "refs";
